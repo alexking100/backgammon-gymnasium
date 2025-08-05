@@ -1,5 +1,5 @@
-import gym
-from gym.spaces import Box
+import gymnasium as gym
+from gymnasium.spaces import Box, Discrete
 from gym_backgammon.envs.backgammon import Backgammon as Game, WHITE, BLACK, COLORS
 from random import randint
 from gym_backgammon.envs.rendering import Viewer
@@ -13,7 +13,7 @@ SCREEN_H = 500
 
 
 class BackgammonEnv(gym.Env):
-    metadata = {'render.modes': ['human', 'rgb_array', 'state_pixels']}
+    metadata = {'render_modes': ['human', 'rgb_array', 'state_pixels']}
 
     def __init__(self):
         self.game = Game()
@@ -31,6 +31,11 @@ class BackgammonEnv(gym.Env):
         high[194] = 7.5
 
         self.observation_space = Box(low=low, high=high)
+        
+        # Add action space - using a discrete space as placeholder
+        # The actual valid actions will be filtered by get_valid_actions()
+        self.action_space = Discrete(1000)
+        
         self.counter = 0
         self.max_length_episode = 10000
         self.viewer = None
@@ -55,9 +60,16 @@ class BackgammonEnv(gym.Env):
 
         self.counter += 1
 
-        return observation, reward, done, winner
+        # Create info dictionary with winner information
+        info = {'winner': winner}
+        
+        return observation, reward, done, info
 
-    def reset(self):
+    def reset(self, seed=None, options=None):
+        # Handle seed for reproducibility
+        if seed is not None:
+            np.random.seed(seed)
+            
         # roll the dice
         roll = randint(1, 6), randint(1, 6)
 
@@ -77,9 +89,10 @@ class BackgammonEnv(gym.Env):
 
         return self.current_agent, roll, self.game.get_board_features(self.current_agent)
 
-    def render(self, mode='human'):
-        assert mode in ['human', 'rgb_array', 'state_pixels'], print(mode)
-
+    def render(self):
+        # Default to human rendering for compatibility
+        mode = 'human'
+        
         if mode == 'human':
             self.game.render()
             return True
@@ -118,11 +131,11 @@ class BackgammonEnvPixel(BackgammonEnv):
         self.observation_space = Box(low=0, high=255, shape=(STATE_H, STATE_W, 3), dtype=np.uint8)
 
     def step(self, action):
-        observation, reward, done, winner = super().step(action)
-        observation = self.render(mode='state_pixels')
-        return observation, reward, done, winner
+        observation, reward, done, info = super().step(action)
+        observation = self.render()
+        return observation, reward, done, info
 
-    def reset(self):
-        current_agent, roll, observation = super().reset()
-        observation = self.render(mode='state_pixels')
+    def reset(self, seed=None, options=None):
+        current_agent, roll, observation = super().reset(seed=seed, options=options)
+        observation = self.render()
         return current_agent, roll, observation

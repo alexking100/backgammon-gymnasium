@@ -1,4 +1,4 @@
-import gym
+import gymnasium as gym
 import time
 from itertools import count
 import random
@@ -7,6 +7,9 @@ from gym_backgammon.envs.backgammon import WHITE, BLACK, COLORS, TOKEN
 
 env = gym.make('gym_backgammon:backgammon-v0')
 # env = gym.make('gym_backgammon:backgammon-pixel-v0')
+
+# Access the underlying environment to use custom methods
+unwrapped_env = env.unwrapped
 
 random.seed(0)
 np.random.seed(0)
@@ -35,7 +38,7 @@ def make_plays():
 
     t = time.time()
 
-    env.render(mode='human')
+    env.render()
 
     for i in count():
         if first_roll:
@@ -46,7 +49,7 @@ def make_plays():
 
         print("Current player={} ({} - {}) | Roll={}".format(agent.color, TOKEN[agent.color], COLORS[agent.color], roll))
 
-        actions = env.get_valid_actions(roll)
+        actions = unwrapped_env.get_valid_actions(roll)
 
         # print("\nLegal Actions:")
         # for a in actions:
@@ -54,9 +57,10 @@ def make_plays():
 
         action = agent.choose_best_action(actions, env)
 
-        observation_next, reward, done, winner = env.step(action)
+        observation_next, reward, done, info = env.step(action)
+        winner = info.get('winner', None)
 
-        env.render(mode='human')
+        env.render()
 
         if done:
             if winner is not None:
@@ -71,7 +75,7 @@ def make_plays():
 
             break
 
-        agent_color = env.get_opponent_agent()
+        agent_color = unwrapped_env.get_opponent_agent()
         agent = agents[agent_color]
         observation = observation_next
 
