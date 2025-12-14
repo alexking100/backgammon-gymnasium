@@ -33,6 +33,8 @@ setup(
         "gymnasium>=0.28.0",
         "numpy",
         "pyglet",
+        "matplotlib",
+        "pandas",
     ],
     extras_require={
         "dev": [
